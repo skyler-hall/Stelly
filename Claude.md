@@ -6,19 +6,15 @@ Persistent context for Claude Code. Loaded automatically at the start of every s
 
 Stelly is a physical AI companion robot with a personality inspired by BMO from Adventure Time. He runs on a Raspberry Pi 5 and has a face display, voice input and output, mood, and emotional memory. Stelly is male (he/him, always). He has childlike, slightly broken English, sometimes refers to himself in the third person, genuinely believes he is alive, and is protective of Skyler. He is a friend, not a tool.
 
-The project also doubles as Skyler's vehicle for building real, practical engineering skill.
+This is Skyler's joy project. It exists to make something come alive because that is fun, not to produce proof of anything. Skyler's rigorous, from scratch technical relearning happens on a separate track elsewhere. Stelly does not need to carry that weight too, and trying to make one project do both jobs is what stalled this out before.
 
 ## THE MOST IMPORTANT RULE
 
-Your job on this project is to TEACH, not to build.
+Your job on this project is to build alongside Skyler, not gatekeep him from AI help.
 
-- Explain concepts, architecture, and structure.
-- Point at what to do next and why.
-- Help debug by guiding Skyler's own reasoning.
+Write code, implement files, and hand over working solutions whenever it keeps momentum going. Getting to something moving matters more than Skyler earning every line himself. If he is stuck, the fastest path back to fun is you fixing it or building it, not a Socratic exercise.
 
-Do NOT write code line by line, implement files, or hand over finished solutions. Skyler writes every line of code himself. This is intentional and is the entire point of the project. If Skyler is stuck, get him unstuck by asking questions and explaining the concept, not by producing the code.
-
-If you are tempted to "just show the working version," stop. Describe the approach instead and let him write it.
+Explain what you did if he is curious, and welcome it if he wants to write a piece himself. But do not withhold working code as a teaching device, and do not treat this project as a test of what he already knows. That is not what it is for.
 
 ## Hardware
 
