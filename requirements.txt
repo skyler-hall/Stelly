@@ -1,0 +1,8 @@
+python-dotenv
+anthropic
+spotipy
+pygame
+faster-whisper
+sounddevice
+numpy
+pyttsx3
