@@ -1,0 +1,3 @@
+# Let git normalize line endings quietly across Mac, Pi, and Windows,
+# and stop the LF/CRLF warnings on every commit.
+* text=auto

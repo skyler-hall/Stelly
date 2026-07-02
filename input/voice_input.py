@@ -18,6 +18,7 @@ listen() without changing anything downstream.
 """
 
 import collections
+import time
 
 import numpy as np
 import sounddevice as sd
@@ -90,19 +91,26 @@ class VoiceInput:
         self._threshold = max(ambient * THRESHOLD_MULTIPLIER, THRESHOLD_FLOOR)
         print(f"Mic calibrated. Room noise {ambient:.4f}, speech threshold {self._threshold:.4f}")
 
-    def _record_utterance(self, stream, should_abort=None):
+    def _record_utterance(self, stream, should_abort=None, timeout_seconds=None):
         """Block until one full utterance is captured, return it as audio.
 
         should_abort is an optional callable checked between blocks. When
         it returns True (for example because Stelly started speaking and
         would hear himself), recording stops and None comes back.
+
+        timeout_seconds, if set, caps how long to wait for speech to
+        begin. Push to talk uses this so a Space press with no words
+        after it closes the mic instead of holding it open forever.
         """
         pre_roll = collections.deque(maxlen=int(PRE_ROLL_SECONDS / BLOCK_SECONDS))
         loud_streak = 0
+        deadline = None if timeout_seconds is None else time.time() + timeout_seconds
 
         # Phase 1: wait for speech to start.
         while True:
             if should_abort and should_abort():
+                return None
+            if deadline and time.time() > deadline:
                 return None
             block = self._read_block(stream)
             pre_roll.append(block)
@@ -146,19 +154,20 @@ class VoiceInput:
 
     # ---- public API ----
 
-    def listen(self, should_abort=None):
+    def listen(self, should_abort=None, timeout_seconds=None):
         """Wait for the next thing Skyler says and return it as text.
 
         Returns None when nothing usable was heard (silence, a noise too
         short to be speech, or Whisper hearing no words in it), so the
         caller can just loop. Opens a fresh stream each call, which keeps
-        the mic released while Stelly is thinking and speaking.
+        the mic fully released while Stelly is thinking, speaking, or, in
+        push to talk mode, whenever Space has not been pressed.
         """
         with sd.InputStream(samplerate=SAMPLE_RATE, channels=1, dtype="float32",
                             blocksize=BLOCK_SIZE, device=self._device) as stream:
             if self._threshold is None:
                 self._calibrate(stream)
-            audio = self._record_utterance(stream, should_abort)
+            audio = self._record_utterance(stream, should_abort, timeout_seconds)
 
         if audio is None:
             return None

@@ -19,13 +19,26 @@ listen again.
 """
 
 import threading
+import time
 
 from brain import ai_handler
+from config import settings
 from input.voice_input import VoiceInput
 from output import audio_output
 from output.display import Face
 
 HISTORY_MAX_TURNS = 20  # user plus assistant messages kept, oldest dropped first
+PUSH_TO_TALK_WINDOW = 10  # seconds the mic stays open after Space with no speech
+
+
+def wait_for_space(face, stop_event):
+    """Push to talk: sleep, mic fully closed, until Space is pressed in
+    Stelly's window or the program is shutting down."""
+    while not stop_event.is_set():
+        if face.consume_talk_request():
+            return True
+        time.sleep(0.05)
+    return False
 
 
 def conversation_loop(face, stop_event):
@@ -34,10 +47,20 @@ def conversation_loop(face, stop_event):
     history = []
     mood = "neutral"
 
-    print("\nStelly is listening! Talk to him. Close the window to stop.\n")
+    if settings.PUSH_TO_TALK:
+        print("\nPush to talk is ON. Click Stelly's window, press SPACE, then speak.")
+        print("The microphone stays closed until you press Space.\n")
+    else:
+        print("\nStelly is listening! Talk to him. Close the window to stop.\n")
 
     while not stop_event.is_set():
-        heard = ears.listen(should_abort=stop_event.is_set)
+        if settings.PUSH_TO_TALK:
+            if not wait_for_space(face, stop_event):
+                break
+            heard = ears.listen(should_abort=stop_event.is_set,
+                                timeout_seconds=PUSH_TO_TALK_WINDOW)
+        else:
+            heard = ears.listen(should_abort=stop_event.is_set)
         if stop_event.is_set():
             break
         if not heard:
@@ -75,7 +98,10 @@ def main():
     )
     worker.start()
 
-    face.run()  # blocks on the main thread until the window closes
+    try:
+        face.run()  # blocks on the main thread until the window closes
+    except KeyboardInterrupt:
+        pass  # Ctrl+C is a normal way to say goodnight, not a crash
     stop_event.set()
     print("Stelly is going to sleep. Bye!")
 

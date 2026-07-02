@@ -76,6 +76,7 @@ class Face:
 
         self.mood = DEFAULT_MOOD
         self.talking = False
+        self.talk_requested = False  # set by Space, read by the conversation loop
 
         # Theme follows the clock like a phone: light during the day,
         # dark at night. Passing an explicit theme, or pressing D, sets a
@@ -104,6 +105,14 @@ class Face:
         """Flip the mouth flap on or off. Safe to call from another
         thread, it is a single attribute write that the draw loop reads."""
         self.talking = bool(talking)
+
+    def consume_talk_request(self):
+        """True exactly once per Space press, used by push to talk mode.
+        Reading it clears it, so one press means one listening session."""
+        if self.talk_requested:
+            self.talk_requested = False
+            return True
+        return False
 
     def set_theme(self, theme_name):
         """Manually force a theme, held until the next day/night boundary."""
@@ -264,6 +273,8 @@ class Face:
                     return False
                 if event.key == pygame.K_d:
                     self.toggle_theme()
+                if event.key == pygame.K_SPACE:
+                    self.talk_requested = True
             if event.type == pygame.VIDEORESIZE:
                 self.width, self.height = event.w, event.h
                 self.screen = pygame.display.set_mode((self.width, self.height), pygame.RESIZABLE)

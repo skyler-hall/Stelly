@@ -20,19 +20,22 @@ and sidesteps the whole bug class.
 
 import pyttsx3
 
-SPEECH_RATE = 175        # words per minute, slightly quicker than default
-VOICE_PREFERENCE = ""    # substring of a voice name to prefer, e.g. "Zira", empty picks default
+from config import settings
 
 
 class Pyttsx3Engine:
-    """Cross-platform system voices via pyttsx3."""
+    """Cross-platform system voices via pyttsx3.
+
+    Voice choice and speed come from .env (STELLY_VOICE, STELLY_VOICE_RATE)
+    since the installed voices differ on every machine.
+    """
 
     def say(self, text):
         engine = pyttsx3.init()  # fresh engine per call, see module docstring
-        engine.setProperty("rate", SPEECH_RATE)
-        if VOICE_PREFERENCE:
+        engine.setProperty("rate", settings.VOICE_RATE)
+        if settings.VOICE_NAME:
             for voice in engine.getProperty("voices"):
-                if VOICE_PREFERENCE.lower() in voice.name.lower():
+                if settings.VOICE_NAME.lower() in voice.name.lower():
                     engine.setProperty("voice", voice.id)
                     break
         engine.say(text)
@@ -77,5 +80,22 @@ def speak(text):
 
 
 if __name__ == "__main__":
-    # Quick manual check: run this file directly to hear the voice.
-    speak("Hello! Stelly can talk now. Stelly is very excited about this!")
+    # Run directly to audition every voice installed on this machine,
+    # then set your favorite in .env as STELLY_VOICE.
+    engine = pyttsx3.init()
+    voices = engine.getProperty("voices")
+    engine.stop()
+    print(f"{len(voices)} voices installed:\n")
+    for voice in voices:
+        print(f"  {voice.name}")
+    print("\nAuditioning each one...")
+    for voice in voices:
+        print(f"Now speaking: {voice.name}")
+        one = pyttsx3.init()
+        one.setProperty("rate", settings.VOICE_RATE)
+        one.setProperty("voice", voice.id)
+        one.say("Hello! Stelly can talk now. Stelly is very excited about this!")
+        one.runAndWait()
+        one.stop()
+    print("\nPick your favorite and put part of its name in .env, for example:")
+    print("STELLY_VOICE=Zira")

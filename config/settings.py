@@ -23,6 +23,18 @@ SPOTIFY_REDIRECT_URI = os.getenv("SPOTIFY_REDIRECT_URI")
 # Lives in .env because the right answer differs on every machine.
 MIC_NAME = os.getenv("STELLY_MIC", "")
 
+# Which system voice Stelly speaks with, as a piece of the voice name,
+# for example "Zira" on Windows. Empty means the system default voice.
+# STELLY_VOICE_RATE is words per minute, higher sounds more energetic.
+VOICE_NAME = os.getenv("STELLY_VOICE", "")
+VOICE_RATE = int(os.getenv("STELLY_VOICE_RATE", "185"))
+
+# Privacy: when STELLY_PUSH_TO_TALK is on (1/true/yes), the microphone
+# stays completely closed until Space is pressed in Stelly's window,
+# and closes again as soon as one utterance is captured. When off,
+# Stelly listens continuously while running, Siri style.
+PUSH_TO_TALK = os.getenv("STELLY_PUSH_TO_TALK", "").strip().lower() in ("1", "true", "yes")
+
 
 def require(value, name):
     """Raise a clear error if a required setting is missing, instead of
