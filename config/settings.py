@@ -35,6 +35,12 @@ VOICE_RATE = int(os.getenv("STELLY_VOICE_RATE", "185"))
 # Stelly listens continuously while running, Siri style.
 PUSH_TO_TALK = os.getenv("STELLY_PUSH_TO_TALK", "").strip().lower() in ("1", "true", "yes")
 
+# LeetCode progress tracking via alfa-leetcode-api. The default URL is
+# the public instance (free tier, sleeps when idle, rate limited).
+# Point LEETCODE_API_URL at a self hosted docker copy for speed.
+LEETCODE_USERNAME = os.getenv("LEETCODE_USERNAME", "")
+LEETCODE_API_URL = os.getenv("LEETCODE_API_URL", "https://alfa-leetcode-api.onrender.com")
+
 
 def require(value, name):
     """Raise a clear error if a required setting is missing, instead of
