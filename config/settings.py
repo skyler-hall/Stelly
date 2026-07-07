@@ -41,6 +41,28 @@ PUSH_TO_TALK = os.getenv("STELLY_PUSH_TO_TALK", "").strip().lower() in ("1", "tr
 LEETCODE_USERNAME = os.getenv("LEETCODE_USERNAME", "")
 LEETCODE_API_URL = os.getenv("LEETCODE_API_URL", "https://alfa-leetcode-api.onrender.com")
 
+# Free texts through Gmail: an email to text gateway address like
+# 5551234567@tmomail.net, or any plain email address. Uses the Gmail
+# credentials above. See notify/email_sms.py for gateway addresses.
+NOTIFY_EMAIL_TO = os.getenv("NOTIFY_EMAIL_TO", "")
+
+# Optional separate sending identity so texts arrive "from Stelly"
+# instead of from Skyler's own Gmail. Empty means send with the
+# GMAIL_ADDRESS credentials above.
+NOTIFY_EMAIL_FROM = os.getenv("NOTIFY_EMAIL_FROM", "")
+NOTIFY_EMAIL_PASSWORD = os.getenv("NOTIFY_EMAIL_PASSWORD", "")
+
+# Twilio SMS, optional paid alternative. Setup steps are documented in
+# notify/twilio_sms.py. All empty means the channel is skipped.
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
+TWILIO_FROM_NUMBER = os.getenv("TWILIO_FROM_NUMBER", "")
+TWILIO_TO_NUMBER = os.getenv("TWILIO_TO_NUMBER", "")
+
+# IMAP search used by the job tracker when scanning for application
+# emails. Refine per machine in .env as classification needs grow.
+TRACKER_QUERY = os.getenv("TRACKER_QUERY", 'SUBJECT "application"')
+
 
 def require(value, name):
     """Raise a clear error if a required setting is missing, instead of

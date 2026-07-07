@@ -13,7 +13,21 @@ from brain.tools.leetcode import (
     get_leetcode_daily,
     get_leetcode_progress,
 )
+from brain.tools.memory import (
+    FORGET_TOOL,
+    LIST_MEMORIES_TOOL,
+    REMEMBER_TOOL,
+    forget_memory,
+    list_memories,
+    remember_this,
+)
 from brain.tools.music import PLAY_MUSIC_TOOL, play_music
+from brain.tools.preferences import (
+    GET_NOTIFICATION_PREFERENCES_TOOL,
+    SET_NOTIFICATION_PREFERENCE_TOOL,
+    get_notification_preferences,
+    set_notification_preference,
+)
 
 TOOL_DEFINITIONS = [
     PLAY_MUSIC_TOOL,
@@ -21,6 +35,11 @@ TOOL_DEFINITIONS = [
     GET_TIME_TOOL,
     GET_LEETCODE_PROGRESS_TOOL,
     GET_DAILY_CHALLENGE_TOOL,
+    REMEMBER_TOOL,
+    LIST_MEMORIES_TOOL,
+    FORGET_TOOL,
+    SET_NOTIFICATION_PREFERENCE_TOOL,
+    GET_NOTIFICATION_PREFERENCES_TOOL,
 ]
 
 TOOL_FUNCTIONS = {
@@ -29,4 +48,9 @@ TOOL_FUNCTIONS = {
     "get_current_time": get_current_time,
     "get_leetcode_progress": get_leetcode_progress,
     "get_leetcode_daily": get_leetcode_daily,
+    "remember_this": remember_this,
+    "list_memories": list_memories,
+    "forget_memory": forget_memory,
+    "set_notification_preference": set_notification_preference,
+    "get_notification_preferences": get_notification_preferences,
 }

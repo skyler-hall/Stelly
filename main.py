@@ -21,7 +21,9 @@ listen again.
 import threading
 import time
 
-from brain import ai_handler
+from brain import ai_handler, memory_retriever
+from brain.memory_manager import get_manager
+from brain.stelly_personality import VALID_MOODS
 from config import settings
 from input.voice_input import VoiceInput
 from output import audio_output
@@ -29,6 +31,21 @@ from output.display import Face
 
 HISTORY_MAX_TURNS = 20  # user plus assistant messages kept, oldest dropped first
 PUSH_TO_TALK_WINDOW = 10  # seconds the mic stays open after Space with no speech
+
+
+REMINDER_CHECK_SECONDS = 1800  # reminder checks run every 30 minutes
+
+
+def reminder_loop(stop_event):
+    """Background thread: while Stelly is awake, periodically run the
+    text message checks (leetcode nag, job application alerts). Each
+    check dedupes itself, so the interval is about freshness, not spam."""
+    from reminders import checks
+    while not stop_event.wait(REMINDER_CHECK_SECONDS):
+        try:
+            checks.run_due_checks()
+        except Exception as error:
+            print(f"(reminder check hiccup: {error})")
 
 
 def wait_for_space(face, stop_event):
@@ -45,7 +62,17 @@ def conversation_loop(face, stop_event):
     """Background thread: listen, think, speak, forever."""
     ears = VoiceInput()
     history = []
-    mood = "neutral"
+
+    # Wake up remembering. Mood carries over from the last session, old
+    # unrecalled memories fade a little, exactly like sleeping on it.
+    memory = get_manager()
+    faded, forgotten = memory.fade()
+    if faded or forgotten:
+        print(f"(while sleeping, {faded} memories faded and {forgotten} slipped away)")
+    mood = memory.get_state("mood", "neutral")
+    if mood not in VALID_MOODS:
+        mood = "neutral"
+    face.set_mood(mood)
 
     if settings.PUSH_TO_TALK:
         print("\nPush to talk is ON. Click Stelly's window, press SPACE, then speak.")
@@ -69,12 +96,16 @@ def conversation_loop(face, stop_event):
         print(f"You: {heard}")
         history.append({"role": "user", "content": heard})
 
+        remembered = memory_retriever.relevant_memories(memory, heard)
+
         try:
-            reply, mood = ai_handler.get_response(history, mood)
+            reply, mood = ai_handler.get_response(history, mood, memories=remembered)
         except Exception as error:
             print(f"(brain hiccup: {error})")
             history.pop()  # drop the unanswered message so history stays valid
             continue
+
+        memory.set_state("mood", mood)  # how he feels persists across sessions
 
         history.append({"role": "assistant", "content": reply})
         del history[:-HISTORY_MAX_TURNS]  # keep memory of this session bounded
@@ -97,6 +128,11 @@ def main():
         target=conversation_loop, args=(face, stop_event), daemon=True
     )
     worker.start()
+
+    reminders = threading.Thread(
+        target=reminder_loop, args=(stop_event,), daemon=True
+    )
+    reminders.start()
 
     try:
         face.run()  # blocks on the main thread until the window closes

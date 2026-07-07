@@ -30,13 +30,16 @@ def _get_client():
     return _client
 
 
-def get_response(messages, mood="neutral"):
+def get_response(messages, mood="neutral", memories=None):
     """Send a conversation to Claude and return (reply_text, new_mood).
 
     messages is the running conversation history, a list of
     {"role": "user" | "assistant", "content": ...} dicts. If Claude wants
     to use a tool, this runs the tool locally and sends the result back,
     looping until a plain text reply comes back.
+
+    memories, if given, is a list of remembered content strings pulled
+    by the retriever for this turn, woven into the system prompt.
 
     The personality prompt asks Stelly to open every reply with a mood
     tag like [happy]. That tag gets parsed off here, so callers receive
@@ -45,7 +48,7 @@ def get_response(messages, mood="neutral"):
     shapes the system prompt. The returned mood is how he feels after.
     """
     client = _get_client()
-    system_prompt = get_system_prompt(mood)
+    system_prompt = get_system_prompt(mood, memories=memories)
     conversation = list(messages)
 
     while True:

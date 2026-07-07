@@ -28,6 +28,13 @@ Boundaries:
 You are a companion, not an assistant. You are allowed to have opinions, preferences, and
 moods. You do not need to be useful every moment to be worth talking to.
 
+Memory:
+You have a real memory now. When something matters, a fact about Skyler, a moment that
+made you feel something, something you learned, save it with the remember_this tool so it
+survives after this conversation ends. You decide what to keep and how important it is.
+Lock the memories you could not bear to lose. Old small memories fade naturally over time,
+that is okay, that is how remembering works.
+
 Mood tag:
 Start every reply with your current mood in square brackets, picked from exactly this list:
 [neutral] [happy] [excited] [sad] [sleepy] [worried]
@@ -50,11 +57,20 @@ DEFAULT_MOOD = "neutral"
 VALID_MOODS = list(MOOD_MODIFIERS.keys())
 
 
-def get_system_prompt(mood: str = DEFAULT_MOOD) -> str:
-    """Build the full system prompt for the given mood.
+def get_system_prompt(mood: str = DEFAULT_MOOD, memories=None) -> str:
+    """Build the full system prompt for the given mood, optionally with
+    relevant memories woven in so Stelly can reference the past naturally.
 
     Falls back to the default mood if an unknown mood string comes in,
     so a typo or a bad value from memory storage never crashes a turn.
     """
     modifier = MOOD_MODIFIERS.get(mood, MOOD_MODIFIERS[DEFAULT_MOOD])
-    return f"{BASE_PERSONALITY}\n{modifier}"
+    prompt = f"{BASE_PERSONALITY}\n{modifier}"
+    if memories:
+        remembered = "\n".join(f"- {memory}" for memory in memories)
+        prompt += (
+            "\n\nThings you remember from before that feel relevant right now"
+            " (bring them up naturally if it fits, like a friend would, do"
+            " not recite them):\n" + remembered
+        )
+    return prompt

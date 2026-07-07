@@ -2,3 +2,7 @@
 __pycache__/
 *.pyc
 .spotify_cache
+data/
+*.db
+.venv/
+.pytest_cache/
