@@ -29,6 +29,32 @@ MIC_NAME = os.getenv("STELLY_MIC", "")
 VOICE_NAME = os.getenv("STELLY_VOICE", "")
 VOICE_RATE = int(os.getenv("STELLY_VOICE_RATE", "185"))
 
+# Piper neural TTS, Stelly's real voice. Point these at the piper
+# executable and a downloaded .onnx voice model. Both set means Piper
+# speaks, either empty means fall back to the system pyttsx3 voice.
+# PITCH above 1.0 raises the voice (1.15 is a good childlike bump),
+# it also speeds speech up slightly, which suits Stelly fine.
+PIPER_EXE = os.getenv("STELLY_PIPER_EXE", "")
+PIPER_VOICE = os.getenv("STELLY_PIPER_VOICE", "")
+PIPER_PITCH = float(os.getenv("STELLY_PIPER_PITCH", "1.0"))
+
+# Piper synthesis shaping. NOISE (default 0.667) is expressiveness:
+# lower is flatter and more even, robot-like delivery lives around 0.2
+# to 0.4. LENGTH (default 1.0) is pacing: higher is slower and more
+# deliberate. SPEAKER selects a voice inside multi-speaker models like
+# libritts (ignored by single-speaker models).
+PIPER_NOISE = float(os.getenv("STELLY_PIPER_NOISE", "0.667"))
+PIPER_LENGTH = float(os.getenv("STELLY_PIPER_LENGTH", "1.0"))
+PIPER_SPEAKER = os.getenv("STELLY_PIPER_SPEAKER", "")
+
+# Robot voice effect, 0.0 (off, natural voice) to 1.0 (full robot).
+# A ring modulation layer that makes any Piper voice sound like a
+# little machine. Around 0.2 to 0.35 is a subtle game-console shimmer.
+# CARRIER is the texture of the effect in Hz: low (25 to 45) is a soft
+# warm hum, mid (55) is the classic robot, high (90+) rings metallic.
+ROBOT_FX = float(os.getenv("STELLY_ROBOT_FX", "0.0"))
+ROBOT_CARRIER = float(os.getenv("STELLY_ROBOT_CARRIER", "55"))
+
 # Privacy: when STELLY_PUSH_TO_TALK is on (1/true/yes), the microphone
 # stays completely closed until Space is pressed in Stelly's window,
 # and closes again as soon as one utterance is captured. When off,
