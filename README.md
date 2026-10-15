@@ -12,7 +12,7 @@ A living AI companion robot with a personality inspired by BMO from Adventure Ti
 
 **Use tools.** Mid-conversation he can check the time, check Gmail, play Spotify, look up LeetCode progress, fetch the LeetCode daily challenge, manage his own memories, and flip notification preferences.
 
-**Text your phone.** Twilio SMS reminders: an evening text if no LeetCode problem was solved today, and alerts when the job tracker finds new application email. Both toggle by voice ("Stelly, stop the LeetCode reminders") and the toggles persist.
+**Text your phone.** Free texts through a Gmail-to-carrier-gateway (Twilio SMS as a paid fallback): an evening nag if no LeetCode problem was solved today, alerts when the job tracker finds new application email, and alerts (twice a day) when a new job posting matches Skyler's preferences. All three toggle by voice ("Stelly, stop the LeetCode reminders") and the toggles persist.
 
 **Respect privacy.** Push to talk mode keeps the mic hardware fully closed until Space is pressed. Audio never leaves the machine, only transcribed text goes to the API.
 
@@ -126,7 +126,7 @@ One line per function, for finding the right place to look when something misbeh
 - `memory.remember_this(content, importance, kind, locked)`: Stelly saves a memory.
 - `memory.list_memories()`: Stelly reads back everything he knows.
 - `memory.forget_memory(id)`: Stelly lets one go, locked ones refuse.
-- `preferences.set_notification_preference(feature, enabled)`: the voice toggle for texts.
+- `preferences.set_notification_preference(feature, enabled)`: the voice toggle for texts (leetcode_reminders, job_alerts, job_listings).
 - `preferences.get_notification_preferences()`: which texts are currently on.
 - `__init__.py`: the registry, every tool must appear in TOOL_DEFINITIONS and TOOL_FUNCTIONS.
 
@@ -181,6 +181,18 @@ One line per function, for finding the right place to look when something misbeh
 - `matcher.decide_match(company, existing)`: new, matched, or ambiguous, never guesses.
 - `pipeline.process_messages(store, messages)`: the assembly line, returns counts plus human readable details.
 
+### jobs/ (new job listing alerts, separate from the application tracker above)
+- `simplify_source.fetch_raw()`: the full SimplifyJobs New-Grad-Positions listings.json, parsed.
+- `simplify_source.normalize(raw)`: one raw entry into the shared listing shape, id namespaced `simplify:`.
+- `simplify_source.fetch_new_since(cutoff_ts)`: active postings newer than cutoff_ts, plus the new cutoff to persist.
+- `ba_source.fetch_raw()`: the jobright.ai Business Analyst feed's README markdown, as text.
+- `ba_source.parse_table(markdown_text, reference)`: the README's job table into the shared listing shape, id namespaced `ba:`.
+- `ba_source._parse_date(text, reference)`: "Aug 18" into a unix timestamp, guessing the year from how far the result lands from reference.
+- `ba_source.fetch_normalized()`: fetch and parse in one step.
+- `preferences.matches(listing)`: title keyword, category, and location check against Skyler's locked-in preferences.
+- `store.JobAlertStore.is_notified(job_id)` / `mark_notified(job_id)`: the per-listing dedup set, one text per posting ever.
+- `pipeline.find_new_matches(store, cutoff_ts)`: fetch both sources, drop already-notified and non-matching postings, returns matches plus the new cutoff.
+
 ### notify/
 - `notify(text)`: send through the first configured channel, always safe to call.
 - `twilio_sms.is_configured()`: all four TWILIO_ values present.
@@ -191,6 +203,7 @@ One line per function, for finding the right place to look when something misbeh
 - `checks.leetcode_reminder(manager, now, force)`: the evening nag, once per day, toggle aware.
 - `checks._daily_suggestion()`: today's challenge as a suggestion line, best effort.
 - `checks.job_application_alert(manager, store, fetch)`: scan Gmail, text anything new, idempotent by seen set.
+- `checks.job_listing_alert(manager, store, now, force)`: fetch both job feeds, text anything new that matches preferences, at most once every 12 hours.
 - `checks.pref_enabled(key, manager)`: reads a toggle, default on.
 - `checks.run_due_checks(manager, now)`: one pass of everything, called by the timer and the standalone runner.
 - `run.py`: entry point for Task Scheduler or cron, `python -m reminders.run`.

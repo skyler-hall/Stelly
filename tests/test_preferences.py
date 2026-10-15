@@ -44,6 +44,13 @@ def test_status_report_lists_both(memory):
     assert "job alerts: on" in report
 
 
+def test_job_listings_toggle_persists(memory):
+    preferences.set_notification_preference("job_listings", False)
+    assert memory.get_state("pref_job_listing_alerts") == "off"
+    report = preferences.get_notification_preferences()
+    assert "job listings: off" in report
+
+
 def test_tools_are_registered():
     assert "set_notification_preference" in tools.TOOL_FUNCTIONS
     assert "get_notification_preferences" in tools.TOOL_FUNCTIONS

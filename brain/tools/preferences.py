@@ -11,21 +11,23 @@ from brain.memory_manager import get_manager
 _FEATURES = {
     "leetcode_reminders": "pref_leetcode_reminders",
     "job_alerts": "pref_job_alerts",
+    "job_listings": "pref_job_listing_alerts",
 }
 
 SET_NOTIFICATION_PREFERENCE_TOOL = {
     "name": "set_notification_preference",
     "description": (
         "Turn Skyler's text message notifications on or off. Use when he "
-        "asks to start or stop LeetCode reminders or job application "
-        "alerts. The change persists until he asks to flip it back."
+        "asks to start or stop LeetCode reminders, job application "
+        "alerts, or new job listing alerts. The change persists until he "
+        "asks to flip it back."
     ),
     "input_schema": {
         "type": "object",
         "properties": {
             "feature": {
                 "type": "string",
-                "enum": ["leetcode_reminders", "job_alerts"],
+                "enum": ["leetcode_reminders", "job_alerts", "job_listings"],
             },
             "enabled": {"type": "boolean"},
         },
@@ -37,7 +39,8 @@ GET_NOTIFICATION_PREFERENCES_TOOL = {
     "name": "get_notification_preferences",
     "description": (
         "Check which of Skyler's text notifications are currently on: "
-        "LeetCode reminders and job application alerts."
+        "LeetCode reminders, job application alerts, and new job listing "
+        "alerts."
     ),
     "input_schema": {"type": "object", "properties": {}},
 }

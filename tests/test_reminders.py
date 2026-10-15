@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 
 from brain.memory_manager import MemoryManager
+from jobs.store import JobAlertStore
 from reminders import checks
 from tracker.store import TrackerStore
 
@@ -21,6 +22,13 @@ def memory():
 @pytest.fixture
 def store():
     s = TrackerStore(":memory:")
+    yield s
+    s.close()
+
+
+@pytest.fixture
+def job_store():
+    s = JobAlertStore(":memory:")
     yield s
     s.close()
 
@@ -152,17 +160,94 @@ def test_job_alert_survives_gmail_failure(memory, store):
     assert "could not read gmail" in result
 
 
+# ---- job_listing_alert ----
+
+def _job(id_, title="Software Engineer", category="Software Engineering",
+         locations=None):
+    return {
+        "id": id_, "title": title, "company": "Acme", "category": category,
+        "locations": locations or ["Remote"], "date_posted": 100,
+        "url": "https://example.com", "active": True,
+    }
+
+
+def test_job_listing_alert_respects_toggle_off(memory, job_store):
+    memory.set_state(checks.PREF_JOB_LISTINGS, "off")
+    with patch("reminders.checks.notify") as sent:
+        result = checks.job_listing_alert(memory, job_store, EVENING)
+    assert result == "job listing alerts are off"
+    sent.assert_not_called()
+
+
+def test_job_listing_alert_texts_new_matches(memory, job_store):
+    with patch("jobs.pipeline.find_new_matches",
+               return_value=([_job("simplify:a")], 500)), \
+         patch("reminders.checks.notify", return_value=True) as sent:
+        result = checks.job_listing_alert(memory, job_store, EVENING)
+    assert "1 listing" in result
+    assert "Acme" in sent.call_args[0][0]
+    assert job_store.is_notified("simplify:a") is True
+    assert memory.get_state(checks.JOB_LISTINGS_CUTOFF_KEY) == "500"
+
+
+def test_job_listing_alert_silent_when_nothing_new(memory, job_store):
+    with patch("jobs.pipeline.find_new_matches", return_value=([], 500)), \
+         patch("reminders.checks.notify") as sent:
+        result = checks.job_listing_alert(memory, job_store, EVENING)
+    assert result == "nothing new"
+    sent.assert_not_called()
+    assert memory.get_state(checks.JOB_LISTINGS_CUTOFF_KEY) == "500"
+
+
+def test_job_listing_alert_survives_fetch_failure(memory, job_store):
+    with patch("jobs.pipeline.find_new_matches", side_effect=RuntimeError("feed down")):
+        result = checks.job_listing_alert(memory, job_store, EVENING)
+    assert "could not fetch job listings" in result
+
+
+def test_job_listing_alert_unsent_matches_are_not_marked_notified(memory, job_store):
+    with patch("jobs.pipeline.find_new_matches",
+               return_value=([_job("simplify:a")], 500)), \
+         patch("reminders.checks.notify", return_value=False):
+        result = checks.job_listing_alert(memory, job_store, EVENING)
+    assert "no notification channel configured" in result
+    assert job_store.is_notified("simplify:a") is False
+
+
+def test_job_listing_alert_respects_the_interval(memory, job_store):
+    with patch("jobs.pipeline.find_new_matches", return_value=([], 500)):
+        checks.job_listing_alert(memory, job_store, EVENING)
+
+    later_same_day = EVENING.replace(hour=23)
+    with patch("jobs.pipeline.find_new_matches") as fetch:
+        result = checks.job_listing_alert(memory, job_store, later_same_day)
+    fetch.assert_not_called()
+    assert "checked recently" in result
+
+
+def test_job_listing_alert_force_bypasses_the_interval(memory, job_store):
+    with patch("jobs.pipeline.find_new_matches", return_value=([], 500)):
+        checks.job_listing_alert(memory, job_store, EVENING)
+
+    later_same_day = EVENING.replace(hour=23)
+    with patch("jobs.pipeline.find_new_matches", return_value=([], 600)) as fetch:
+        checks.job_listing_alert(memory, job_store, later_same_day, force=True)
+    fetch.assert_called_once()
+
+
 # ---- run_due_checks timing ----
 
 def test_leetcode_skipped_before_evening(memory):
     noon = datetime(2026, 7, 7, 12, 0)
-    with patch("reminders.checks.job_application_alert", return_value="nothing new"):
+    with patch("reminders.checks.job_application_alert", return_value="nothing new"), \
+         patch("reminders.checks.job_listing_alert", return_value="nothing new"):
         results = checks.run_due_checks(memory, noon)
     assert "too early" in results["leetcode"]
 
 
 def test_leetcode_runs_in_the_evening(memory):
     with patch("reminders.checks.job_application_alert", return_value="nothing new"), \
+         patch("reminders.checks.job_listing_alert", return_value="nothing new"), \
          patch("reminders.checks.leetcode_reminder", return_value="reminder sent") as nag:
         results = checks.run_due_checks(memory, EVENING)
     nag.assert_called_once()
