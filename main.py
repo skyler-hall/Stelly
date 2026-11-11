@@ -123,6 +123,7 @@ def conversation_loop(face, stop_event):
 def main():
     face = Face()
     stop_event = threading.Event()
+    audio_output.warm_up()  # load his voice now, not on the first reply
 
     worker = threading.Thread(
         target=conversation_loop, args=(face, stop_event), daemon=True

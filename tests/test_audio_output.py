@@ -10,9 +10,18 @@ os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 from unittest.mock import patch
 
 import numpy as np
+import pytest
 
 import output.audio_output as audio
 from output.audio_output import PiperEngine, robotize
+
+
+@pytest.fixture(autouse=True)
+def without_voicelab(monkeypatch):
+    """These tests cover Piper and the system voice, so VoiceLab is
+    switched off even on machines that have it (see test_voice.py)."""
+    monkeypatch.setattr(audio, "_voicelab", None)
+    monkeypatch.setattr(audio, "_voicelab_checked", True)
 
 
 def _piper_configured(monkeypatch, tmp_path):
