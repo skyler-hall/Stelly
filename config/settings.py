@@ -47,6 +47,17 @@ PIPER_NOISE = float(os.getenv("STELLY_PIPER_NOISE", "0.667"))
 PIPER_LENGTH = float(os.getenv("STELLY_PIPER_LENGTH", "1.0"))
 PIPER_SPEAKER = os.getenv("STELLY_PIPER_SPEAKER", "")
 
+# VoiceLab, Stelly's preferred voice system (github.com/skyler-hall/VoiceLab).
+# STELLY_VOICELAB is the path to the VoiceLab folder on this machine. It can
+# stay empty when VoiceLab is pip installed into Stelly's venv instead
+# (pip install -e path/to/VoiceLab). STELLY_VOICE_PRESET is the catalog
+# preset he starts with. Saying "Stelly, use the Henchman voice" switches
+# presets and remembers the choice, so this is only the starting voice.
+# When VoiceLab is missing or the preset's voice files are not synced on
+# this machine, Stelly falls back to the Piper settings below.
+VOICELAB_PATH = os.getenv("STELLY_VOICELAB", "")
+VOICE_PRESET = os.getenv("STELLY_VOICE_PRESET", "Stelly V1")
+
 # Robot voice effect, 0.0 (off, natural voice) to 1.0 (full robot).
 # A ring modulation layer that makes any Piper voice sound like a
 # little machine. Around 0.2 to 0.35 is a subtle game-console shimmer.

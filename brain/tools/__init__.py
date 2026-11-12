@@ -22,6 +22,12 @@ from brain.tools.memory import (
     remember_this,
 )
 from brain.tools.music import PLAY_MUSIC_TOOL, play_music
+from brain.tools.voice import (
+    LIST_VOICES_TOOL,
+    SET_VOICE_TOOL,
+    list_voices,
+    set_voice,
+)
 from brain.tools.preferences import (
     GET_NOTIFICATION_PREFERENCES_TOOL,
     SET_NOTIFICATION_PREFERENCE_TOOL,
@@ -40,6 +46,8 @@ TOOL_DEFINITIONS = [
     FORGET_TOOL,
     SET_NOTIFICATION_PREFERENCE_TOOL,
     GET_NOTIFICATION_PREFERENCES_TOOL,
+    SET_VOICE_TOOL,
+    LIST_VOICES_TOOL,
 ]
 
 TOOL_FUNCTIONS = {
@@ -53,4 +61,6 @@ TOOL_FUNCTIONS = {
     "forget_memory": forget_memory,
     "set_notification_preference": set_notification_preference,
     "get_notification_preferences": get_notification_preferences,
+    "set_voice": set_voice,
+    "list_voices": list_voices,
 }

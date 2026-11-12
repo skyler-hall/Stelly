@@ -4,13 +4,13 @@ A living AI companion robot with a personality inspired by BMO from Adventure Ti
 
 ## Features
 
-**Talk.** Speak out loud and Stelly listens (locally, via faster-whisper), thinks (Claude API), and answers with his own voice while his face animates.
+**Talk.** Speak out loud and Stelly listens (locally, via faster-whisper), thinks (Claude API), and answers with his own voice while his face animates. His voice comes from [VoiceLab](https://github.com/skyler-hall/VoiceLab) presets, and he can switch voices when asked ("Stelly, use the Henchman voice").
 
 **Feel.** Stelly reports his own mood every reply and his face changes to match. Mood persists across sessions, he wakes up how he fell asleep.
 
 **Remember.** Stelly saves what matters with importance scores, emotional and factual kinds, and lock flags for memories he refuses to lose. Unrecalled low importance memories fade naturally. Relevant memories get woven into every conversation.
 
-**Use tools.** Mid-conversation he can check the time, check Gmail, play Spotify, look up LeetCode progress, fetch the LeetCode daily challenge, manage his own memories, and flip notification preferences.
+**Use tools.** Mid-conversation he can check the time, check Gmail, play Spotify, look up LeetCode progress, fetch the LeetCode daily challenge, manage his own memories, flip notification preferences, and change his own voice.
 
 **Text your phone.** Free texts through a Gmail-to-carrier-gateway (Twilio SMS as a paid fallback): an evening nag if no LeetCode problem was solved today, alerts when the job tracker finds new application email, and alerts (twice a day) when a new job posting matches Skyler's preferences. All three toggle by voice ("Stelly, stop the LeetCode reminders") and the toggles persist.
 
@@ -32,7 +32,7 @@ Standalone pieces, useful for debugging one organ at a time:
 
 ```
 python -m output.display        # face only
-python -m output.audio_output   # audition all installed voices
+python -m output.audio_output   # hear his voice, and how long it takes to start talking
 python -m input.voice_input     # ears only, prints transcripts
 python -m notify.twilio_sms     # send one test text
 python -m reminders.run         # run reminder checks once and exit
@@ -57,7 +57,9 @@ Gitignored, per machine, read only by `config/settings.py`.
 ```dotenv
 ANTHROPIC_API_KEY=        # required for conversation
 STELLY_MIC=               # mic name fragment, e.g. eMeet, empty = system default
-STELLY_VOICE=             # voice name fragment, e.g. Zira, empty = system default
+STELLY_VOICELAB=          # path to the VoiceLab folder, empty if pip installed (see below)
+STELLY_VOICE_PRESET=Stelly V1   # VoiceLab preset he starts with
+STELLY_VOICE=             # fallback system voice name fragment, e.g. Zira
 STELLY_VOICE_RATE=185     # words per minute
 STELLY_PUSH_TO_TALK=      # 1 = mic closed until Space is pressed
 LEETCODE_USERNAME=        # for progress tools and the daily reminder
@@ -73,6 +75,22 @@ SPOTIFY_CLIENT_ID=        # music control, needs Spotify Premium
 SPOTIFY_CLIENT_SECRET=
 SPOTIFY_REDIRECT_URI=http://127.0.0.1:8080/callback
 ```
+
+## Stelly's voice (VoiceLab)
+
+Stelly speaks with VoiceLab presets, the same catalog on the PC, Mac and Pi. Set it up once per machine:
+
+```
+# VoiceLab cloned next to Stelly, e.g. ~/Projects/VoiceLab
+cd ../VoiceLab && ./run.sh sync          # Windows: run sync
+cd ../Stelly
+pip install -e ../VoiceLab               # inside Stelly's venv
+python -m output.audio_output            # he talks, and prints how long the first sentence took to render
+```
+
+If VoiceLab is not installed, or the preset's voice files are not synced on that machine, Stelly falls back to the Piper settings and then the system voice, so he is never mute. Ask him to "use the Henchman voice" or "go back to your normal voice" and the choice is remembered across restarts. Only voices synced on that machine are offered.
+
+Speed: Kokoro voices (like Stelly V1) sound richer but render slower, especially on the Pi. Stelly speaks sentence by sentence and loads the voice at startup to hide most of that, but if he still pauses too long on the Pi, a Piper voice with the same effects is much faster.
 
 ## Function reference
 
@@ -128,6 +146,9 @@ One line per function, for finding the right place to look when something misbeh
 - `memory.forget_memory(id)`: Stelly lets one go, locked ones refuse.
 - `preferences.set_notification_preference(feature, enabled)`: the voice toggle for texts (leetcode_reminders, job_alerts, job_listings).
 - `preferences.get_notification_preferences()`: which texts are currently on.
+- `voice.set_voice(voice)`: switch to a VoiceLab preset by loose name, or 'default' for his normal voice. Persists.
+- `voice.list_voices()`: the voices synced on this machine, marking the one in use.
+- `voice.match_voice(asked, choices)`: loose name matching, ignores case, spaces and 'the'.
 - `__init__.py`: the registry, every tool must appear in TOOL_DEFINITIONS and TOOL_FUNCTIONS.
 
 ### input/voice_input.py
@@ -161,7 +182,13 @@ One line per function, for finding the right place to look when something misbeh
 ### output/audio_output.py
 - `speak(text)`: says the words, blocking, never raises.
 - `Pyttsx3Engine.say(text)`: system voice via pyttsx3, fresh engine per call to dodge a replay bug.
-- `_get_engine()`: engine singleton chooser, the seam where Piper slots in later.
+- `_get_engine()`: engine singleton chooser: VoiceLab, then Piper, then the system voice.
+- `VoiceLabEngine.say(text)`: speaks sentence by sentence, rendering the next one while the current one plays.
+- `load_voicelab()`: imports VoiceLab once (from STELLY_VOICELAB or a pip install), None when missing.
+- `ready_presets()`: catalog presets whose voice files are on this machine.
+- `current_preset()`: the chosen preset if ready here, else the starting one, else None.
+- `split_sentences(text)`: reply into speakable chunks, short ones joined to the next.
+- `warm_up()`: loads the voice model in the background at startup.
 
 ### output/themes.py
 - `LIGHT` / `DARK` / `THEMES`: the two palettes, plain RGB, edit freely.
